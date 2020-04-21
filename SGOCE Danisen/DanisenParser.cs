@@ -9,11 +9,12 @@ namespace SGOCE_Danisen
 {
     class DanisenParser
     {
-        public DanisenParser(string input_path, string output_path, string output_path_2)
+        public DanisenParser(string input_path, string output_path, string output_path_2, string history_path)
         {
             InputPath = input_path;
             OutputPath = output_path;
             OutputPath2 = output_path_2;
+            HistoryPath = history_path;
 
             // Initialise ranks
             ranks = new List<Rank>();
@@ -28,6 +29,12 @@ namespace SGOCE_Danisen
         {
             List<string> output = new List<string>();
             players = new List<Player>();
+
+            playerHistory = new List<List<string>>();
+            for (int i = 0; i < 23; i++)
+            {
+                playerHistory.Add(new List<string>());
+            }
 
             if (!File.Exists(InputPath))
                 return;
@@ -82,6 +89,9 @@ namespace SGOCE_Danisen
 
                 // Rejoin line
                 output.Add(string.Join(",", line));
+
+                playerHistory[winnerIndex].Add(string.Join(",", line));
+                playerHistory[loserIndex].Add(string.Join(",", line));
             }
 
             // Save file
@@ -100,17 +110,48 @@ namespace SGOCE_Danisen
             // Save file
             if (!string.IsNullOrEmpty(OutputPath2))
             {
+                // Sort players list
+                var sortedList = players
+                    .OrderByDescending(l => l.rank)
+                    .ThenByDescending(l => l.score)
+                    .ThenBy(l => l.name);
+
                 using (var w = new StreamWriter(OutputPath2))
                 {
-                    foreach (var p in players)
+                    foreach (var p in sortedList)
                     {
-                        string line = string.Format("{0},{1},{2}", p.name, (RankNames)p.rank, p.score);
+                        string line = string.Format("{0},{1},{2}", (RankNames)p.rank, p.name, p.score);
                         w.WriteLine(line);
                         w.Flush();
                     }
                 }
             }
 
+            // Save player history
+            if (!string.IsNullOrEmpty(HistoryPath))
+            {
+                // Make directory if it doesnt exist
+                System.IO.Directory.CreateDirectory(HistoryPath);
+
+                // Loop through players
+                for (int i = 0; i < 23; i++)
+                {
+                    string playerName = players[i].name;
+                    foreach (char c in System.IO.Path.GetInvalidFileNameChars())
+                    {
+                        playerName = playerName.Replace(c, '_');
+                    }
+
+                    using (var w = new StreamWriter(Path.Combine(HistoryPath, playerName + ".csv")))
+                    {
+                        foreach (var l in playerHistory[i])
+                        {
+                            w.WriteLine(l);
+                            w.Flush();
+                        }
+                    }
+                }
+            }
         }
 
         private void SimulateMatch(int winner, int loser)
@@ -174,8 +215,11 @@ namespace SGOCE_Danisen
         private string InputPath;
         private string OutputPath;
         private string OutputPath2;
+        private string HistoryPath;
         private List<Player> players;
         private List<Rank> ranks;
+
+        private List<List<string>> playerHistory;
 
         class Player
         {
