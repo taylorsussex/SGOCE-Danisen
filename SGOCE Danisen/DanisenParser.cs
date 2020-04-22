@@ -31,10 +31,6 @@ namespace SGOCE_Danisen
             players = new List<Player>();
 
             playerHistory = new List<List<string>>();
-            for (int i = 0; i < 23; i++)
-            {
-                playerHistory.Add(new List<string>());
-            }
 
             if (!File.Exists(InputPath))
                 return;
@@ -134,7 +130,7 @@ namespace SGOCE_Danisen
                 System.IO.Directory.CreateDirectory(HistoryPath);
 
                 // Loop through players
-                for (int i = 0; i < 23; i++)
+                for (int i = 0; i < playerHistory.Count; i++)
                 {
                     string playerName = players[i].name;
                     foreach (char c in System.IO.Path.GetInvalidFileNameChars())
@@ -209,6 +205,7 @@ namespace SGOCE_Danisen
 
             // Add new player
             players.Add(new Player(name));
+            playerHistory.Add(new List<string>());
             return players.Count - 1;
         }
 
